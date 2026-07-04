@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生態循環探索工具 · Ecocycle Discussion Tool (Google Drive 版)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --ink:#22271f; --ink-soft:#565f4e;
+    --paper:#f6f2e8; --panel:#fffdf8; --line:#dcd4bf;
+    --birth:#3f8f5f; --birth-bg:#e9f4ec;
+    --maturity:#2f6f9e; --maturity-bg:#e8f1f7;
+    --creative:#8b3f7f; --creative-bg:#f3e9f1;
+    --renewal:#2f8f8a; --renewal-bg:#e6f4f2;
+    --scarcity:#b5822b; --scarcity-bg:#f8efdc;
+    --rigidity:#a13f3f; --rigidity-bg:#f7e9e6;
+    --drive:#1a73e8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"Noto Sans TC", sans-serif; line-height:1.6; padding-bottom:90px;}
+  h1,h2,h3,.disp{font-family:"Noto Serif TC", serif;}
+
+  /* ---------- Gate screen ---------- */
+  #gateScreen{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 16px; gap:22px;}
+  .gate-hero{text-align:center; max-width:600px;}
+  .gate-hero h1{font-size:1.7rem; margin:0 0 8px;}
+  .gate-hero p{color:var(--ink-soft); font-size:.9rem;}
+  .gate-cards{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; max-width:860px;}
+  .gate-card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; width:340px; display:flex; flex-direction:column; gap:10px;}
+  .gate-card h3{margin:0; font-size:1.02rem;}
+  .gate-card p.hint{color:var(--ink-soft); font-size:.8rem; margin:0;}
+  .gate-card input{font-family:inherit; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:.9rem;}
+  #gateCodeInput{text-transform:uppercase; letter-spacing:.12em; font-weight:700; text-align:center;}
+  .gate-card button{width:100%; padding:10px; font-size:.9rem;}
+  .btn-google{background:var(--drive); color:#fff;}
+  details.setup-note{max-width:820px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 18px;}
+  details.setup-note summary{cursor:pointer; font-weight:700; font-size:.9rem;}
+  details.setup-note ol{font-size:.83rem; color:var(--ink-soft); padding-left:20px;}
+  details.setup-note li{margin-bottom:8px;}
+  details.setup-note code{background:rgba(0,0,0,.06); padding:1px 5px; border-radius:5px;}
+  .field-inline{display:flex; flex-direction:column; gap:6px; text-align:left;}
+  .field-inline label{font-size:.78rem; color:var(--ink-soft);}
+  .signin-status{font-size:.82rem; padding:8px 12px; border-radius:9px; background:rgba(0,0,0,.04);}
+  .signin-status.ok{background:#e7f3ea; color:#2c6b3f;}
+  .signin-status.err{background:#f7e9e6; color:#a13f3f;}
+
+  /* ---------- App shell ---------- */
+  header.top{position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:2px solid var(--line); padding:12px 18px 10px;}
+  .top-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;}
+  .brand{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .brand h1{font-size:1.2rem; margin:0; font-weight:900;}
+  .brand span.sub{font-size:.72rem; color:var(--ink-soft);}
+  .room-bar{display:flex; align-items:center; gap:6px; font-size:.78rem; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:5px 6px 5px 12px; flex-wrap:wrap;}
+  .room-bar b{letter-spacing:.1em;}
+  .room-bar a{color:var(--drive); text-decoration:none; font-weight:700;}
+  .room-bar button{padding:5px 10px; font-size:.7rem;}
+  .sync-bar{display:flex; align-items:center; gap:8px; font-size:.72rem; color:var(--ink-soft);}
+  .dot{width:8px; height:8px; border-radius:50%; background:#8ab08a; flex:none;}
+  .dot.off{background:#c99;} .dot.mid{background:#d9b25a;}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:8px; padding:7px 13px; font-size:.82rem; font-weight:700; transition:transform .12s, opacity .12s;}
+  button:hover{opacity:.85;} button:active{transform:scale(.97);}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-danger{background:var(--rigidity); color:#fff;}
+  .btn-outline{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .meta-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .meta-row input{font-family:inherit; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:7px 10px; font-size:.85rem;}
+  .meta-row input#topicInput{flex:1 1 260px; font-weight:700; font-size:.95rem;}
+  nav.tabs{display:flex; gap:6px; overflow-x:auto; padding:12px 18px 0; background:var(--paper); border-bottom:1px solid var(--line);}
+  nav.tabs button.tabbtn{background:var(--panel); border:1px solid var(--line); border-bottom:none; border-radius:10px 10px 0 0; padding:9px 14px; font-size:.83rem; color:var(--ink-soft); white-space:nowrap; position:relative; top:1px;}
+  nav.tabs button.tabbtn.active{background:var(--ink); color:#fff; border-color:var(--ink); font-weight:700;}
+  nav.tabs button.tabbtn .count{background:rgba(0,0,0,.08); border-radius:999px; padding:1px 7px; font-size:.72rem; margin-left:5px;}
+  nav.tabs button.tabbtn.active .count{background:rgba(255,255,255,.25);}
+  main{max-width:980px; margin:0 auto; padding:22px 18px 10px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:18px;}
+  .panel h2{margin:0 0 6px; font-size:1.25rem;}
+  .panel p.desc{color:var(--ink-soft); font-size:.86rem; margin:0 0 16px; max-width:660px;}
+  .panel p.desc b{color:var(--ink);}
+  .quad-tag{display:inline-block; font-size:.72rem; font-weight:700; letter-spacing:.05em; padding:2px 10px; border-radius:999px; margin-bottom:8px;}
+  .add-row{display:flex; gap:8px; margin-bottom:14px;}
+  .add-row input{flex:1; font-family:inherit; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:.92rem;}
+  ul.item-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  ul.item-list li{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; background:rgba(0,0,0,.025); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.9rem;}
+  ul.item-list li .del{background:transparent; border:none; color:#a15a5a; font-size:1rem; padding:0 4px; flex:none;}
+  .empty-hint{color:#9a9484; font-size:.85rem; font-style:italic; padding:8px 2px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:780px){.two-col{grid-template-columns:1fr;}}
+  .trap-box{border-radius:12px; padding:16px; border:1px solid var(--line);}
+  .strategy-grid{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px;}
+  .strategy-chip{display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.8rem; background:var(--panel); cursor:pointer; user-select:none;}
+  .strategy-chip.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .action-form{display:grid; grid-template-columns:1fr; gap:8px; margin-top:8px;}
+  .action-form input{font-family:inherit; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:.86rem;}
+  .action-preview{margin-top:10px; background:rgba(255,255,255,.7); border:1px dashed var(--line); border-radius:10px; padding:12px; font-size:.9rem; line-height:1.7;}
+  .checkbox-grid{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 16px;}
+  .checkbox-grid label{display:flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.82rem; background:var(--panel); cursor:pointer;}
+  .checkbox-grid label.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+  textarea{width:100%; font-family:inherit; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.9rem; resize:vertical; min-height:70px;}
+  .field-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px;}
+  @media (max-width:700px){.field-grid{grid-template-columns:1fr;}}
+  .field-grid label{font-size:.78rem; color:var(--ink-soft); display:block; margin-bottom:4px;}
+  .field-grid input{width:100%; font-family:inherit; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:.88rem;}
+  .loop-wrap{display:flex; flex-direction:column; align-items:center; margin:6px 0 20px; gap:10px;}
+  .intro-caption{max-width:640px; text-align:center; font-size:.85rem; color:var(--ink-soft); background:rgba(0,0,0,.03); border-radius:12px; padding:12px 16px;}
+  .summary-block{border-left:4px solid var(--line); padding:6px 0 6px 14px; margin-bottom:16px;}
+  .summary-block h3{margin:0 0 8px; font-size:1rem;}
+  .summary-block ul{margin:0; padding-left:18px; font-size:.88rem;}
+  .entry-card{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; background:rgba(0,0,0,.02);}
+  .entry-head{display:flex; align-items:center; gap:8px; justify-content:space-between; font-size:.9rem;}
+  .entry-head .sub{color:var(--ink-soft); font-weight:400; font-size:.78rem;}
+  .entry-card .tags{display:flex; flex-wrap:wrap; gap:5px; margin:6px 0;}
+  .entry-card .tag{background:var(--maturity-bg); color:var(--maturity); font-size:.7rem; padding:2px 8px; border-radius:999px;}
+  .entry-card p{margin:4px 0 0; font-size:.86rem;}
+  footer.bar{position:fixed; bottom:0; left:0; right:0; background:var(--panel); border-top:2px solid var(--line); padding:10px 18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; z-index:20;}
+  footer.bar button{font-size:.85rem; padding:9px 16px;}
+  input[type=file]{display:none;}
+  .toast{position:fixed; top:14px; right:14px; background:var(--ink); color:#fff; padding:9px 16px; border-radius:9px; font-size:.82rem; z-index:80; opacity:0; transform:translateY(-8px); transition:opacity .25s, transform .25s; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  /* ---------- Canvas modal ---------- */
+  .canvas-overlay{position:fixed; inset:0; background:rgba(20,18,12,.6); z-index:100; display:flex; align-items:center; justify-content:center; padding:18px;}
+  .canvas-modal{background:var(--paper); border-radius:18px; max-width:1120px; width:100%; max-height:94vh; overflow:auto; padding:26px 26px 30px; position:relative;}
+  .canvas-modal .close-btn{position:absolute; top:14px; right:14px;}
+  .canvas-title{text-align:center; margin-bottom:4px;}
+  .canvas-sub{text-align:center; color:var(--ink-soft); font-size:.85rem; margin-bottom:18px;}
+  .canvas-grid{display:grid; grid-template-columns:1fr 1.3fr 1fr; grid-template-areas:
+      "renewal center maturity"
+      "scarcity center rigidity"
+      "birth center creative"; gap:14px; align-items:stretch;}
+  @media (max-width:820px){ .canvas-grid{grid-template-columns:1fr; grid-template-areas:"center" "renewal" "maturity" "scarcity" "rigidity" "birth" "creative";} }
+  .canvas-box{border:2px solid; border-radius:14px; padding:14px; background:var(--panel); min-height:120px;}
+  .canvas-box-title{font-weight:700; font-size:.85rem; margin-bottom:8px;}
+  .canvas-box ul{margin:0; padding-left:18px; font-size:.82rem;}
+  .canvas-center{grid-area:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:10px;}
+  .cb-renewal{grid-area:renewal;} .cb-maturity{grid-area:maturity;} .cb-scarcity{grid-area:scarcity;}
+  .cb-rigidity{grid-area:rigidity;} .cb-birth{grid-area:birth;} .cb-creative{grid-area:creative;}
+  .canvas-footer{margin-top:18px; border-top:1px solid var(--line); padding-top:14px;}
+</style>
+</head>
+<body>
+
+<!-- ============ 進場閘門 ============ -->
+<div id="gateScreen">
+  <div class="gate-hero">
+    <h1>🔁 生態循環探索工具</h1>
+    <p>Ecocycle Discussion Tool — 共用儲存後端：<b>Google 雲端硬碟</b>。資料會直接寫入您指定的 Drive 資料夾，任何跨平台裝置只要登入有權限的 Google 帳號都能共編、下載與管理。</p>
+  </div>
+
+  <details class="setup-note" open>
+    <summary>⚙️ 雲端連線設定（第一次使用請先完成，之後瀏覽器會記住）</summary>
+    <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:12px;">
+      <div class="field-inline" style="flex:1 1 280px;">
+        <label>Google OAuth 用戶端 ID (Client ID)</label>
+        <input id="clientIdInput" placeholder="xxxxxxxx.apps.googleusercontent.com">
+      </div>
+      <div class="field-inline" style="flex:1 1 320px;">
+        <label>Google Drive 資料夾連結或 ID</label>
+        <input id="folderIdInput" placeholder="https://drive.google.com/drive/folders/...">
+      </div>
+    </div>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-outline" onclick="saveSettings()">💾 儲存設定</button>
+      <button class="btn-google" onclick="doSignIn()">🔐 使用 Google 帳號登入</button>
+      <button class="btn-ghost" onclick="useLocalFallback()">改用本機模式（略過雲端）</button>
+    </div>
+    <div id="signinStatus" class="signin-status" style="margin-top:10px;">尚未登入。請先貼上 Client ID 並儲存設定，再點擊登入。</div>
+    <ol>
+      <li>前往 <code>console.cloud.google.com</code> 建立專案，於「API 和服務→已啟用的 API」啟用 <b>Google Drive API</b>。</li>
+      <li>「API 和服務→OAuth 同意畫面」：User type 選 External，填基本資料，新增範圍 <code>drive</code>（完整雲端硬碟存取，非 drive.file）、<code>email</code>、<code>profile</code>，並在「測試使用者」加入所有要共編的人的 Google 帳號 email。</li>
+      <li>「API 和服務→憑證→建立憑證→OAuth 用戶端 ID」，類型選「網頁應用程式」，「已授權的 JavaScript 來源」填入這個工具實際會被開啟的網址（例如 GitHub Pages 網址；本機測試可加 <code>http://localhost:三位數埠號</code>）。建立後複製 Client ID 貼到上方欄位。</li>
+      <li>把您的 Drive 資料夾分享權限改成「知道連結的人：編輯者」，或把協作者的帳號加入「編輯者」，否則登入後仍無法寫入檔案。</li>
+      <li>注意：Google 登入需要網頁有真實的 https 網址（不能是雙擊打開的本機檔案），建議把這個 HTML 上傳到 GitHub Pages 或 Netlify 後再使用。</li>
+    </ol>
+  </details>
+
+  <div class="gate-cards" id="gateCards" style="display:none;">
+    <div class="gate-card">
+      <h3>🆕 建立新討論主題</h3>
+      <p class="hint">輸入主題名稱，系統會在您的 Drive 資料夾產生一個對應檔案，並給您一組 6 位代碼分享給團隊。</p>
+      <input id="gateTopicInput" placeholder="請輸入討論主題名稱">
+      <button class="btn-primary" onclick="createRoom()">建立主題並取得代碼</button>
+    </div>
+    <div class="gate-card">
+      <h3>🔑 加入既有討論主題</h3>
+      <p class="hint">輸入對方提供的 6 位主題代碼（不分大小寫），系統會到同一個 Drive 資料夾找到對應檔案並載入。</p>
+      <input id="gateCodeInput" placeholder="例如 A2B9K7" maxlength="6">
+      <button class="btn-primary" onclick="joinRoom()">加入主題</button>
+    </div>
+  </div>
+  <p id="gateNote" style="font-size:.78rem; color:var(--ink-soft); max-width:560px; text-align:center;"></p>
+</div>
+
+<!-- ============ 主應用畫面 ============ -->
+<div id="appScreen" style="display:none;">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">
+        <h1>🔁 生態循環探索工具</h1>
+        <span class="sub">Google Drive 共用版</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div class="room-bar">🔑 代碼：<b id="roomCodeDisplay">------</b>
+          <button class="btn-ghost" onclick="copyCode()">複製</button>
+          <a id="driveFileLink" href="#" target="_blank" rel="noopener">☁️ 在 Drive 開啟</a>
+          <button class="btn-ghost" onclick="leaveRoom()">🚪離開</button>
+        </div>
+        <div class="sync-bar">
+          <span class="dot" id="syncDot"></span>
+          <span id="syncText">初始化中…</span>
+          <button class="btn-ghost" onclick="manualSync()">🔄 同步</button>
+        </div>
+      </div>
+    </div>
+    <div class="meta-row">
+      <input id="topicInput" placeholder="🗂 討論主題">
+      <input id="teamInput" placeholder="👥 團隊／單位">
+      <input id="dateInput" type="date">
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabsNav"></nav>
+  <main id="mainArea"></main>
+
+  <footer class="bar">
+    <button class="btn-outline" onclick="openCanvasView()">🖼 開啟畫布彙整視圖</button>
+    <button class="btn-outline" onclick="exportJSON()">⬇️ 匯出資料 (JSON)</button>
+    <label class="btn-outline" style="display:inline-flex;align-items:center;">⬆️ 匯入資料 (JSON)
+      <input type="file" id="importFile" accept="application/json" onchange="importJSON(event)">
+    </label>
+    <button class="btn-primary" onclick="downloadReport()">💾 下載彙整報告 (HTML)</button>
+    <button class="btn-danger" onclick="clearAll()">🗑 清空此主題</button>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===========================================================
+   資料模型
+=========================================================== */
+function blankState(){
+  return {
+    topic:"", team:"", date:"",
+    setupEntries:[],
+    birth:[], maturity:[], creative:[], renewal:[],
+    scarcity:{ notes:[], strategy:{}, action:{target:"",method:"",owner:"",deadline:""} },
+    rigidity:{ notes:[], strategy:{}, action:{target:"",method:"",owner:"",deadline:""} }
+  };
+}
+let state = blankState();
+let currentCode = null;
+let currentFileId = null;
+let lastSavedStr = "";
+let saveTimer = null;
+let pollHandle = null;
+let draft = {name:"",stage:"",subject:"",problemText:"",types:[]};
+let backendMode = "drive"; // "drive" | "local"
+
+const PROBLEM_TYPES = ["概念理解與迷思概念","閱讀理解與資訊整理","提問、探究與問題解決","專題研究與資料查證",
+  "寫作、論述與表達","角色扮演與情境模擬","差異化教材與補救／增廣","自主學習與後設認知",
+  "形成性評量與回饋","AI 倫理、查證與正用 AI"];
+const SCARCITY_STRATS = [
+  ["focus","聚焦：縮小題目"],["authorize","授權：明確允許試辦"],["time","給時間：保留共備與回顧時段"],
+  ["role","派角色：指定召集人與支援者"],["scaffold","補鷹架：提供工具、模板與範例"],
+  ["connect","做連結：媒合人、資源與問題"],["protect","保護試作：先不要過早考核"],
+  ["evidence","收集證據：用小型資料判斷是否值得擴大"]
+];
+const RIGIDITY_STRATS = [
+  ["stop","停止：這件事已經沒有必要，直接結束"],["shrink","縮小：保留核心價值，但降低規模與頻率"],
+  ["merge","合併：與其他活動整合，避免重複"],["reframe","重構：保留目的，但改變形式"],
+  ["exit","退場：設定期限，逐步結束"]
+];
+const TABS = [
+  {id:"setup", label:"🎯 起始問題"}, {id:"birth", label:"🌱 誕生 Birth"}, {id:"maturity", label:"🧭 成熟 Maturity"},
+  {id:"creative", label:"⚡ 創造性破壞"}, {id:"renewal", label:"🔗 更新 Renewal"},
+  {id:"traps", label:"⚠️ 陷阱提醒"}, {id:"summary", label:"📋 彙整總結"}
+];
+let activeTab = "setup";
+const INTRO_TEXT = "生態循環模板把任何議題依「投入程度」與「穩定度」分成四個階段，並在過程中提醒兩個常見陷阱：" +
+  "🌱 <b>Birth 誕生</b>（剛萌芽、需要保護的新嘗試）→ 🧭 <b>Maturity 成熟</b>（穩定且仍有價值的做法）→ " +
+  "⚡ <b>Creative Destruction 創造性破壞</b>（已失去價值、該放手的舊做法）→ 🔗 <b>Renewal 更新</b>（正在醞釀的新方向），" +
+  "再回到誕生。中途常卡住的兩個陷阱：⚠️ <b>資源匱乏陷阱</b>（好想法沒被好好投入支持）與 ⚠️ <b>僵化陷阱</b>（舊做法捨不得放手）。";
+
+/* ===========================================================
+   Google OAuth (GIS) + Drive REST
+=========================================================== */
+const DEFAULT_FOLDER_LINK = "https://drive.google.com/drive/folders/17FGTwqoYQLzneced6OxBb28tfDCwg-D7?usp=sharing";
+let CLIENT_ID = "";
+let FOLDER_ID = "";
+let tokenClient = null;
+let accessToken = null;
+let tokenExpiry = 0;
+let userEmail = "";
+
+function parseFolderId(input){
+  if(!input) return "";
+  const m = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : input.trim();
+}
+
+function loadSettings(){
+  try{
+    CLIENT_ID = localStorage.getItem("ecocycle-clientid") || "";
+    const savedFolder = localStorage.getItem("ecocycle-folderlink") || DEFAULT_FOLDER_LINK;
+    document.getElementById("clientIdInput").value = CLIENT_ID;
+    document.getElementById("folderIdInput").value = savedFolder;
+    FOLDER_ID = parseFolderId(savedFolder);
+  }catch(e){}
+}
+function saveSettings(){
+  CLIENT_ID = document.getElementById("clientIdInput").value.trim();
+  const folderRaw = document.getElementById("folderIdInput").value.trim();
+  FOLDER_ID = parseFolderId(folderRaw);
+  try{
+    localStorage.setItem("ecocycle-clientid", CLIENT_ID);
+    localStorage.setItem("ecocycle-folderlink", folderRaw);
+  }catch(e){}
+  if(!CLIENT_ID){ setSigninStatus("請先貼上 Client ID 再儲存。", "err"); return; }
+  initGIS();
+  setSigninStatus("設定已儲存，請點擊「使用 Google 帳號登入」。", "");
+}
+
+function initGIS(){
+  if(!window.google || !CLIENT_ID) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: "https://www.googleapis.com/auth/drive email profile openid",
+    callback: async (resp)=>{
+      if(resp.error){ setSigninStatus("登入失敗：" + resp.error, "err"); return; }
+      accessToken = resp.access_token;
+      tokenExpiry = Date.now() + (resp.expires_in*1000 - 60000);
+      await fetchUserInfo();
+      setSigninStatus("✅ 已登入：" + (userEmail||"Google 帳號"), "ok");
+      document.getElementById("gateCards").style.display = "flex";
+      backendMode = "drive";
+    }
+  });
+}
+function doSignIn(){
+  if(!CLIENT_ID){ setSigninStatus("請先貼上 Client ID 並儲存設定。", "err"); return; }
+  if(!tokenClient) initGIS();
+  tokenClient.requestAccessToken({ prompt: accessToken ? "" : "consent" });
+}
+async function fetchUserInfo(){
+  try{
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers:{ "Authorization":"Bearer "+accessToken } });
+    if(res.ok){ const d = await res.json(); userEmail = d.email || ""; }
+  }catch(e){}
+}
+function setSigninStatus(msg, cls){
+  const el = document.getElementById("signinStatus");
+  el.textContent = msg;
+  el.className = "signin-status" + (cls? " "+cls : "");
+}
+function ensureToken(){
+  return new Promise((resolve, reject)=>{
+    if(accessToken && Date.now() < tokenExpiry){ resolve(accessToken); return; }
+    if(!tokenClient){ reject(new Error("尚未設定 Google 登入")); return; }
+    tokenClient.callback = (resp)=>{
+      if(resp.error){ reject(resp); return; }
+      accessToken = resp.access_token;
+      tokenExpiry = Date.now() + (resp.expires_in*1000 - 60000);
+      resolve(accessToken);
+    };
+    tokenClient.requestAccessToken({ prompt:"" });
+  });
+}
+
+function useLocalFallback(){
+  backendMode = "local";
+  document.getElementById("gateCards").style.display = "flex";
+  setSigninStatus("已切換為本機模式：資料只存在這個瀏覽器，不會跨裝置同步。", "err");
+}
+
+/* ---- Drive REST helpers ---- */
+async function driveFindFile(code){
+  const token = await ensureToken();
+  const q = encodeURIComponent(`name='ecocycle-room-${code}.json' and '${FOLDER_ID}' in parents and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers:{ "Authorization":"Bearer "+token }
+  });
+  if(!res.ok) throw new Error("搜尋檔案失敗 (" + res.status + ")，請確認資料夾權限與 Client ID 設定。");
+  const data = await res.json();
+  return (data.files && data.files.length) ? data.files[0] : null;
+}
+async function driveCreateFile(code, contentObj){
+  const token = await ensureToken();
+  const metadata = { name:`ecocycle-room-${code}.json`, parents:[FOLDER_ID], mimeType:"application/json" };
+  const boundary = "-------ecocycle" + Date.now();
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(contentObj)}\r\n` +
+    `--${boundary}--`;
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name", {
+    method:"POST",
+    headers:{ "Authorization":"Bearer "+token, "Content-Type": `multipart/related; boundary=${boundary}` },
+    body
+  });
+  if(!res.ok) throw new Error("建立檔案失敗 (" + res.status + ")，請確認資料夾分享權限為「可編輯」。");
+  return await res.json();
+}
+async function driveUpdateFile(fileId, contentObj){
+  const token = await ensureToken();
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+    method:"PATCH",
+    headers:{ "Authorization":"Bearer "+token, "Content-Type":"application/json" },
+    body: JSON.stringify(contentObj)
+  });
+  if(!res.ok) throw new Error("寫入檔案失敗 (" + res.status + ")");
+  return true;
+}
+async function driveGetFile(fileId){
+  const token = await ensureToken();
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers:{ "Authorization":"Bearer "+token }
+  });
+  if(!res.ok) throw new Error("讀取檔案失敗 (" + res.status + ")");
+  return await res.text();
+}
+
+/* ===========================================================
+   建立 / 加入主題
+=========================================================== */
+function genCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = ""; for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+function normalizeCode(str){ return (str||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function persistLastCode(code){ try{ localStorage.setItem("ecocycle-lastcode", code); }catch(e){} }
+
+async function createRoom(){
+  const topicVal = document.getElementById("gateTopicInput").value.trim();
+  if(!topicVal){ alert("請先輸入討論主題名稱"); return; }
+  state = blankState();
+  state.topic = topicVal;
+
+  if(backendMode === "drive"){
+    try{
+      let code = genCode();
+      for(let i=0;i<5;i++){
+        const exist = await driveFindFile(code);
+        if(!exist) break;
+        code = genCode();
+      }
+      const file = await driveCreateFile(code, state);
+      currentFileId = file.id; currentCode = code;
+      lastSavedStr = JSON.stringify(state);
+    }catch(e){ alert(e.message || "建立主題失敗"); return; }
+  } else {
+    const code = genCode();
+    currentCode = code;
+    localStorage.setItem("ecocycle-local-"+code, JSON.stringify(state));
+  }
+  persistLastCode(currentCode);
+  enterApp();
+  toast("已建立主題，代碼：" + currentCode);
+}
+
+async function joinRoom(){
+  const code = normalizeCode(document.getElementById("gateCodeInput").value);
+  if(code.length !== 6){ alert("請輸入完整的 6 位主題代碼"); return; }
+
+  if(backendMode === "drive"){
+    try{
+      const file = await driveFindFile(code);
+      if(file){
+        currentFileId = file.id;
+        const str = await driveGetFile(file.id);
+        state = JSON.parse(str); lastSavedStr = str;
+      } else {
+        if(!confirm("在 Drive 資料夾找不到此代碼對應的檔案。要用這個代碼建立一個新的空白主題嗎？")) return;
+        state = blankState();
+        const file2 = await driveCreateFile(code, state);
+        currentFileId = file2.id;
+        lastSavedStr = JSON.stringify(state);
+      }
+    }catch(e){ alert(e.message || "加入主題失敗"); return; }
+  } else {
+    const local = localStorage.getItem("ecocycle-local-"+code);
+    if(local){ state = JSON.parse(local); }
+    else { state = blankState(); localStorage.setItem("ecocycle-local-"+code, JSON.stringify(state)); }
+  }
+  currentCode = code;
+  persistLastCode(code);
+  enterApp();
+}
+
+function enterApp(){
+  document.getElementById("gateScreen").style.display = "none";
+  document.getElementById("appScreen").style.display = "block";
+  document.getElementById("roomCodeDisplay").textContent = currentCode;
+  const link = document.getElementById("driveFileLink");
+  if(backendMode === "drive" && currentFileId){
+    link.href = `https://drive.google.com/file/d/${currentFileId}/view`;
+    link.style.display = "inline";
+  } else { link.style.display = "none"; }
+  renderAll();
+  if(pollHandle) clearInterval(pollHandle);
+  if(backendMode === "drive"){
+    pollHandle = setInterval(pollLoad, 6000);
+    setSync(true, "已連線 Google 雲端硬碟");
+  } else {
+    setSync(false, "本機模式：僅存於此瀏覽器，未跨裝置同步");
+  }
+}
+function leaveRoom(){
+  if(pollHandle){ clearInterval(pollHandle); pollHandle = null; }
+  currentCode = null; currentFileId = null;
+  document.getElementById("appScreen").style.display = "none";
+  document.getElementById("gateScreen").style.display = "flex";
+}
+function copyCode(){
+  if(!currentCode) return;
+  navigator.clipboard?.writeText(currentCode).then(()=>toast("已複製主題代碼：" + currentCode)).catch(()=>toast("代碼：" + currentCode));
+}
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  loadSettings();
+  try{ const last = localStorage.getItem("ecocycle-lastcode"); if(last) document.getElementById("gateCodeInput").value = last; }catch(e){}
+  if(CLIENT_ID){ initGIS(); }
+  document.getElementById("gateNote").textContent =
+    "提示：Google 登入需要此頁面有真實的 https 網址（建議部署到 GitHub Pages / Netlify），不能是雙擊打開的本機檔案。若暫時無法設定，可先用「本機模式」試用工具介面。";
+});
+
+/* ===========================================================
+   儲存 / 同步（統一介面，內部依 backendMode 走 Drive 或 local）
+=========================================================== */
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 700); }
+
+async function saveState(){
+  if(!currentCode) return;
+  const str = JSON.stringify(state);
+  lastSavedStr = str;
+  if(backendMode === "drive" && currentFileId){
+    try{
+      await driveUpdateFile(currentFileId, state);
+      setSync(true, "已同步至 Google 雲端硬碟");
+    }catch(e){ setSync(false, "同步失敗：" + (e.message||e)); }
+  } else {
+    try{ localStorage.setItem("ecocycle-local-"+currentCode, str); }catch(e){}
+    setSync(false, "本機模式（代碼 " + currentCode + "）");
+  }
+}
+async function pollLoad(){
+  if(!currentCode || backendMode !== "drive" || !currentFileId) return;
+  try{
+    const str = await driveGetFile(currentFileId);
+    if(str && str !== lastSavedStr){
+      mergeRemote(JSON.parse(str));
+      lastSavedStr = str;
+      renderAll();
+      toast("已取得團隊最新內容");
+    }
+  }catch(e){ setSync(false, "同步失敗：" + (e.message||e)); }
+}
+function manualSync(){ pollLoad(); toast("已嘗試同步"); }
+function mergeRemote(remote){
+  const active = document.activeElement;
+  const id = active ? active.id : null;
+  if(id === "topicInput"){ remote.topic = state.topic; }
+  else if(id === "teamInput"){ remote.team = state.team; }
+  else if(id === "dateInput"){ remote.date = state.date; }
+  state = remote;
+}
+function setSync(ok, msg){
+  document.getElementById("syncDot").className = "dot" + (ok?"":" off");
+  document.getElementById("syncText").textContent = msg;
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* ===========================================================
+   Tabs
+=========================================================== */
+function tabCount(id){
+  if(id==="setup") return state.setupEntries.length;
+  if(id==="birth") return state.birth.length;
+  if(id==="maturity") return state.maturity.length;
+  if(id==="creative") return state.creative.length;
+  if(id==="renewal") return state.renewal.length;
+  if(id==="traps") return state.scarcity.notes.length + state.rigidity.notes.length;
+  return "";
+}
+function renderTabsNav(){
+  const nav = document.getElementById("tabsNav");
+  nav.innerHTML = "";
+  TABS.forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "tabbtn" + (t.id===activeTab ? " active":"");
+    const c = tabCount(t.id);
+    b.innerHTML = t.label + (c!==""? ` <span class="count">${c}</span>`:"");
+    b.onclick = ()=>{ activeTab = t.id; renderAll(); };
+    nav.appendChild(b);
+  });
+}
+
+/* ===========================================================
+   象限面板
+=========================================================== */
+function quadPanel(key, title, tagColor, tagBg, quoteText, desc, placeholder){
+  const items = state[key];
+  const listHtml = items.length
+    ? `<ul class="item-list">${items.map((txt,i)=>`
+        <li><span>${escapeHtml(txt)}</span>
+        <button class="del" onclick="removeItem('${key}',${i})">✕</button></li>`).join("")}</ul>`
+    : `<div class="empty-hint">尚無項目，開始新增討論內容吧。</div>`;
+  return `
+    <div class="panel">
+      <span class="quad-tag" style="background:${tagBg}; color:${tagColor};">${title}</span>
+      <h2>${title}</h2>
+      <p class="desc">圖卡原文：「<b>${quoteText}</b>」<br>${desc}</p>
+      <div class="add-row">
+        <input id="input-${key}" placeholder="${placeholder}" onkeydown="if(event.key==='Enter')addItem('${key}')">
+        <button class="btn-primary" onclick="addItem('${key}')">＋ 新增</button>
+      </div>
+      ${listHtml}
+    </div>`;
+}
+function addItem(key){
+  const input = document.getElementById("input-"+key);
+  const val = input.value.trim();
+  if(!val) return;
+  state[key].push(val); input.value = "";
+  scheduleSave(); renderAll();
+}
+function removeItem(key, idx){ state[key].splice(idx,1); scheduleSave(); renderAll(); }
+
+/* ===========================================================
+   起始問題
+=========================================================== */
+function renderSetup(){
+  const typesHtml = PROBLEM_TYPES.map(pt=>{
+    const on = draft.types.includes(pt);
+    return `<label class="${on?'on':''}" onclick="toggleDraftType(event,'${escapeAttr(pt)}')"><span>${pt}</span></label>`;
+  }).join("");
+  const entriesHtml = state.setupEntries.length
+    ? state.setupEntries.map((e,i)=>`
+      <div class="entry-card">
+        <div class="entry-head">
+          <span><b>${escapeHtml(e.name)||"（未具名）"}</b> <span class="sub">${escapeHtml(e.stage)} ${escapeHtml(e.subject)}</span></span>
+          <button class="del" onclick="removeSetupEntry(${i})">✕</button>
+        </div>
+        ${e.problemTypes.length? `<div class="tags">${e.problemTypes.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>`:""}
+        ${e.problemText? `<p>${escapeHtml(e.problemText)}</p>`:""}
+      </div>`).join("")
+    : `<div class="empty-hint">尚無成員送出起始問題。</div>`;
+  return `
+    <div class="panel">
+      <h2>🎯 啟動任務：帶著問題看見更多可能</h2>
+      <p class="desc">圖卡原文：「<b>我今天最想帶著去看討論成果的問題是</b>」——請先從你的現場出發，盤點你想嘗試解決的問題，再帶著這個問題參與接下來的討論。</p>
+      <div class="loop-wrap">${loopSVG()}<div class="intro-caption">${INTRO_TEXT}</div></div>
+      <div class="field-grid">
+        <div><label>姓名</label><input id="draftName" value="${escapeAttr(draft.name)}" oninput="draft.name=this.value" placeholder="你的姓名"></div>
+        <div><label>學習階段／單位</label><input id="draftStage" value="${escapeAttr(draft.stage)}" oninput="draft.stage=this.value" placeholder="例：國中／教務處"></div>
+        <div><label>科目／領域</label><input id="draftSubject" value="${escapeAttr(draft.subject)}" oninput="draft.subject=this.value" placeholder="例：國文／資訊"></div>
+      </div>
+      <label style="font-size:.78rem;color:var(--ink-soft);">問題類型（可複選）</label>
+      <div class="checkbox-grid">${typesHtml}</div>
+      <textarea id="draftProblemText" placeholder="寫下你想帶著參與討論的具體問題…" oninput="draft.problemText=this.value">${escapeHtml(draft.problemText)}</textarea>
+      <div style="margin-top:12px;"><button class="btn-primary" onclick="submitSetupEntry()">📨 送出我的起始問題</button></div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0;">已收到的起始問題（${state.setupEntries.length}）</h3>
+      ${entriesHtml}
+    </div>`;
+}
+function toggleDraftType(e, pt){
+  e.preventDefault();
+  const i = draft.types.indexOf(pt);
+  if(i>-1) draft.types.splice(i,1); else draft.types.push(pt);
+  renderAll();
+}
+function submitSetupEntry(){
+  if(!draft.name.trim() && !draft.problemText.trim()){ alert("請至少填寫姓名或問題內容"); return; }
+  state.setupEntries.push({ name:draft.name, stage:draft.stage, subject:draft.subject, problemText:draft.problemText, problemTypes:[...draft.types] });
+  draft = {name:"",stage:"",subject:"",problemText:"",types:[]};
+  scheduleSave(); renderAll();
+}
+function removeSetupEntry(i){ state.setupEntries.splice(i,1); scheduleSave(); renderAll(); }
+
+/* ===========================================================
+   陷阱提醒
+=========================================================== */
+function trapPanel(key, title, quoteText, color, bg, strategies, subtitle){
+  const t = state[key];
+  const notesHtml = t.notes.length
+    ? `<ul class="item-list">${t.notes.map((txt,i)=>`
+        <li><span>${escapeHtml(txt)}</span>
+        <button class="del" onclick="removeTrapNote('${key}',${i})">✕</button></li>`).join("")}</ul>`
+    : `<div class="empty-hint">尚無卡點紀錄。</div>`;
+  const chips = strategies.map(([sid,label])=>{
+    const on = !!t.strategy[sid];
+    return `<div class="strategy-chip ${on?'on':''}" onclick="toggleStrategy('${key}','${sid}')"><span>${label}</span></div>`;
+  }).join("");
+  const a = t.action;
+  const preview = key==="scarcity"
+    ? `我們決定對<b>${escapeHtml(a.target)||"＿＿"}</b>投入最小可行資源，具體做法是<b>${escapeHtml(a.method)||"＿＿"}</b>，由<b>${escapeHtml(a.owner)||"＿＿"}</b>負責，在<b>${escapeHtml(a.deadline)||"＿＿"}</b>前完成第一次試作。`
+    : `我們決定對<b>${escapeHtml(a.target)||"＿＿"}</b>進行停止／縮小／合併／重構／退場，具體做法是<b>${escapeHtml(a.method)||"＿＿"}</b>，由<b>${escapeHtml(a.owner)||"＿＿"}</b>負責，在<b>${escapeHtml(a.deadline)||"＿＿"}</b>前提出調整方案。`;
+  return `
+    <div class="trap-box" style="background:${bg};">
+      <span class="quad-tag" style="background:${color}; color:#fff;">${title}</span>
+      <p class="desc" style="margin-top:6px;">圖卡原文：「<b>${quoteText}</b>」<br>${subtitle}</p>
+      <div class="add-row">
+        <input id="input-${key}note" placeholder="卡在哪個具體項目？" onkeydown="if(event.key==='Enter')addTrapNote('${key}')">
+        <button class="btn-primary" onclick="addTrapNote('${key}')">＋ 新增</button>
+      </div>
+      ${notesHtml}
+      <div style="margin-top:16px; font-weight:700; font-size:.85rem;">可用策略（可多選）</div>
+      <div class="strategy-grid">${chips}</div>
+      <div style="font-weight:700; font-size:.85rem;">行動句</div>
+      <div class="action-form">
+        <input placeholder="對象／項目" value="${escapeAttr(a.target)}" onchange="state.${key}.action.target=this.value; scheduleSave(); renderAll();">
+        <input placeholder="具體做法" value="${escapeAttr(a.method)}" onchange="state.${key}.action.method=this.value; scheduleSave(); renderAll();">
+        <input placeholder="負責人" value="${escapeAttr(a.owner)}" onchange="state.${key}.action.owner=this.value; scheduleSave(); renderAll();">
+        <input placeholder="期限" value="${escapeAttr(a.deadline)}" onchange="state.${key}.action.deadline=this.value; scheduleSave(); renderAll();">
+      </div>
+      <div class="action-preview">${preview}</div>
+    </div>`;
+}
+function addTrapNote(key){
+  const input = document.getElementById("input-"+key+"note");
+  const val = input.value.trim();
+  if(!val) return;
+  state[key].notes.push(val); input.value = "";
+  scheduleSave(); renderAll();
+}
+function removeTrapNote(key, idx){ state[key].notes.splice(idx,1); scheduleSave(); renderAll(); }
+function toggleStrategy(key, sid){ state[key].strategy[sid] = !state[key].strategy[sid]; scheduleSave(); renderAll(); }
+function renderTraps(){
+  return `
+    <div class="two-col">
+      ${trapPanel("scarcity","資源匱乏陷阱提醒 Scarcity Trap","資源匱乏陷阱提醒","var(--scarcity)","var(--scarcity-bg)",SCARCITY_STRATS,"Not Investing 未投入 — 給予匱乏陷阱與萌芽期的項目實質支援與時間。")}
+      ${trapPanel("rigidity","僵固陷阱提醒 Rigidity Trap","僵固陷阱提醒","var(--rigidity)","var(--rigidity-bg)",RIGIDITY_STRATS,"Not Letting Go 不願放手 — 針對僵固陷阱的項目，勇敢終止、縮編或改變形式。")}
+    </div>`;
+}
+
+/* ===========================================================
+   迴圈示意圖
+=========================================================== */
+function loopSVG(w=320,h=180){
+  return `<svg width="${w}" height="${h}" viewBox="0 0 360 200">
+    <path d="M60,150 C60,90 140,90 180,100 C220,110 300,110 300,150 C300,190 220,190 180,100 C140,10 60,10 60,50 C60,90 140,90 180,100"
+      fill="none" stroke="#c9c0a6" stroke-width="3"/>
+    <circle cx="60" cy="150" r="9" fill="#3f8f5f"/><text x="60" y="176" text-anchor="middle" font-size="11" fill="#3f8f5f">Birth 誕生</text>
+    <circle cx="300" cy="150" r="9" fill="#2f6f9e"/><text x="300" y="176" text-anchor="middle" font-size="11" fill="#2f6f9e">Maturity 成熟</text>
+    <circle cx="300" cy="50" r="9" fill="#8b3f7f"/><text x="300" y="30" text-anchor="middle" font-size="11" fill="#8b3f7f">Creative Destruction</text>
+    <circle cx="60" cy="50" r="9" fill="#2f8f8a"/><text x="60" y="30" text-anchor="middle" font-size="11" fill="#2f8f8a">Renewal 更新</text>
+  </svg>`;
+}
+
+/* ===========================================================
+   彙整總結
+=========================================================== */
+function renderSummary(){
+  const s = state;
+  const quadBlock = (title, arr, color) => `
+    <div class="summary-block" style="border-color:${color};">
+      <h3 style="color:${color};">${title}（${arr.length}）</h3>
+      ${arr.length? `<ul>${arr.map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul>` : `<div class="empty-hint">尚無項目</div>`}
+    </div>`;
+  const trapBlock = (title, t, color, isScarcity) => {
+    const a = t.action;
+    const stratList = (isScarcity?SCARCITY_STRATS:RIGIDITY_STRATS).filter(([sid])=>t.strategy[sid]).map(([,l])=>l);
+    const sentence = isScarcity
+      ? `我們決定對「${a.target||"—"}」投入最小可行資源，具體做法是${a.method||"—"}，由${a.owner||"—"}負責，在${a.deadline||"—"}前完成第一次試作。`
+      : `我們決定對「${a.target||"—"}」進行停止／縮小／合併／重構／退場，具體做法是${a.method||"—"}，由${a.owner||"—"}負責，在${a.deadline||"—"}前提出調整方案。`;
+    return `
+      <div class="summary-block" style="border-color:${color};">
+        <h3 style="color:${color};">${title}（卡點 ${t.notes.length}）</h3>
+        ${t.notes.length? `<ul>${t.notes.map(n=>`<li>${escapeHtml(n)}</li>`).join("")}</ul>`:`<div class="empty-hint">尚無卡點紀錄</div>`}
+        ${stratList.length? `<p style="font-size:.85rem;"><b>選定策略：</b>${stratList.join("、")}</p>`:""}
+        <p style="font-size:.88rem;">${sentence}</p>
+      </div>`;
+  };
+  const entriesSummary = s.setupEntries.length
+    ? `<ul>${s.setupEntries.map(e=>`<li>${escapeHtml(e.name)||"（未具名）"}：${escapeHtml(e.problemText)||"（未填寫問題）"}</li>`).join("")}</ul>`
+    : `<div class="empty-hint">尚無成員送出起始問題</div>`;
+  return `
+    <div class="panel">
+      <h2>📋 彙整總結</h2>
+      <p class="desc">此頁會隨團隊填寫內容自動更新；也可以直接到 Google Drive 開啟原始 JSON 檔案查看版本歷史。</p>
+      <div class="summary-block" style="border-color:var(--ink);">
+        <h3>基本資訊</h3>
+        <ul>
+          <li>主題代碼：${currentCode||"—"}</li>
+          <li>儲存後端：${backendMode==="drive"?"Google 雲端硬碟":"本機（未同步）"}</li>
+          <li>討論主題：${escapeHtml(s.topic)||"（尚未填寫）"}</li>
+          <li>團隊／單位：${escapeHtml(s.team)||"（尚未填寫）"}</li>
+          <li>日期：${escapeHtml(s.date)||"（尚未填寫）"}</li>
+        </ul>
+      </div>
+      <div class="summary-block" style="border-color:var(--ink-soft);">
+        <h3>成員起始問題（${s.setupEntries.length}）</h3>
+        ${entriesSummary}
+      </div>
+      ${quadBlock("🌱 誕生 Birth", s.birth, "#3f8f5f")}
+      ${quadBlock("🧭 成熟 Maturity", s.maturity, "#2f6f9e")}
+      ${quadBlock("⚡ 創造性破壞 Creative Destruction", s.creative, "#8b3f7f")}
+      ${quadBlock("🔗 更新 Renewal", s.renewal, "#2f8f8a")}
+      ${trapBlock("⚠️ 資源匱乏陷阱 Scarcity Trap", s.scarcity, "#b5822b", true)}
+      ${trapBlock("⚠️ 僵化陷阱 Rigidity Trap", s.rigidity, "#a13f3f", false)}
+    </div>`;
+}
+
+/* ===========================================================
+   主渲染入口
+=========================================================== */
+function renderAll(){
+  renderTabsNav();
+  document.getElementById("topicInput").value = state.topic;
+  document.getElementById("teamInput").value = state.team;
+  document.getElementById("dateInput").value = state.date;
+  let html = "";
+  if(activeTab==="setup"){ html = renderSetup(); }
+  else if(activeTab==="birth"){
+    html = quadPanel("birth","誕生 Birth","#3f8f5f","var(--birth-bg)","我剛開始嘗試或已經進行小規模試作的新做法","需要被保護，而不是立刻被考核。","輸入一個剛開始試作的新方案…");
+  } else if(activeTab==="maturity"){
+    html = quadPanel("maturity","成熟 Maturity","#2f6f9e","var(--maturity-bg)","我已做得穩定、可延伸的經驗","值得保留、制度化或擴散的成功經驗。","輸入一項已穩定且仍有價值的做法…");
+  } else if(activeTab==="creative"){
+    html = quadPanel("creative","創造性破壞 Creative Destruction","#8b3f7f","var(--creative-bg)","我可能需要放下或重設的做法","已失去原有價值、但仍占用時間與資源的項目。","輸入一項需要放下或重設的做法…");
+  } else if(activeTab==="renewal"){
+    html = quadPanel("renewal","更新 Renewal","#2f8f8a","var(--renewal-bg)","我正思考與醞釀的可能方向","還沒正式開始、但覺得值得探索的想法。","輸入一個正在醞釀的新方向…");
+  } else if(activeTab==="traps"){ html = renderTraps(); }
+  else if(activeTab==="summary"){ html = renderSummary(); }
+  document.getElementById("mainArea").innerHTML = html;
+}
+
+/* ===========================================================
+   畫布彙整視圖
+=========================================================== */
+function box(cls, title, color, items){
+  return `<div class="canvas-box ${cls}" style="border-color:${color};">
+    <div class="canvas-box-title" style="color:${color};">${title}</div>
+    ${items.length? `<ul>${items.map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul>` : `<div class="empty-hint">（尚無內容）</div>`}
+  </div>`;
+}
+function openCanvasView(){
+  const s = state;
+  const html = `
+    <div class="canvas-overlay" id="canvasOverlay" onclick="if(event.target.id==='canvasOverlay') closeCanvasView()">
+      <div class="canvas-modal">
+        <button class="btn-ghost close-btn" onclick="closeCanvasView()">✕ 關閉</button>
+        <h2 class="canvas-title">${escapeHtml(s.topic)||"（尚未命名主題）"}</h2>
+        <p class="canvas-sub">Ecocycle Template 生態循環模板 · 主題代碼 ${currentCode||"—"} · 成員彙整畫布</p>
+        <div class="canvas-grid">
+          ${box("cb-renewal","◎ Renewal 更新｜我正思考與醞釀的可能方向","#2f8f8a", s.renewal)}
+          <div class="canvas-center">${loopSVG(260,150)}</div>
+          ${box("cb-maturity","● Maturity 成熟｜我已做得穩定、可延伸的經驗","#2f6f9e", s.maturity)}
+          ${box("cb-scarcity","△ 資源匱乏陷阱提醒", "#b5822b", s.scarcity.notes)}
+          <div class="canvas-center"></div>
+          ${box("cb-rigidity","▣ 僵固陷阱提醒", "#a13f3f", s.rigidity.notes)}
+          ${box("cb-birth","◆ Birth 誕生｜我剛開始嘗試或已經進行小規模試作的新做法","#3f8f5f", s.birth)}
+          <div class="canvas-center"></div>
+          ${box("cb-creative","◆ Creative Destruction 創造性破壞｜我可能需要放下或重設的做法","#8b3f7f", s.creative)}
+        </div>
+        <div class="canvas-footer">
+          <h3 style="margin:0 0 8px;">💡 成員起始問題彙整（${s.setupEntries.length}）</h3>
+          ${s.setupEntries.length ? s.setupEntries.map(e=>`
+            <div class="entry-card">
+              <div class="entry-head"><span><b>${escapeHtml(e.name)||"（未具名）"}</b> <span class="sub">${escapeHtml(e.stage)} ${escapeHtml(e.subject)}</span></span></div>
+              ${e.problemTypes.length? `<div class="tags">${e.problemTypes.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>`:""}
+              ${e.problemText? `<p>${escapeHtml(e.problemText)}</p>`:""}
+            </div>`).join("") : `<div class="empty-hint">尚無成員送出起始問題</div>`}
+        </div>
+      </div>
+    </div>`;
+  const wrap = document.createElement("div");
+  wrap.id = "canvasWrap";
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+}
+function closeCanvasView(){ const el = document.getElementById("canvasWrap"); if(el) el.remove(); }
+
+/* ===========================================================
+   工具函式 / 匯出匯入 / 清空
+=========================================================== */
+function escapeHtml(str){ return (str||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escapeAttr(str){ return escapeHtml(str); }
+
+document.getElementById("topicInput").addEventListener("input", e=>{ state.topic = e.target.value; scheduleSave(); });
+document.getElementById("teamInput").addEventListener("input", e=>{ state.team = e.target.value; scheduleSave(); });
+document.getElementById("dateInput").addEventListener("input", e=>{ state.date = e.target.value; scheduleSave(); });
+
+function clearAll(){
+  if(!confirm("確定要清空此主題的全部內容嗎？此動作無法復原（主題代碼與 Drive 檔案仍會保留）。")) return;
+  const topicKeep = state.topic;
+  state = blankState();
+  state.topic = topicKeep;
+  saveState();
+  renderAll();
+  toast("已清空此主題內容");
+}
+function exportJSON(){
+  const payload = { code:currentCode, ...state };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ecocycle-${currentCode||"data"}.json`;
+  a.click();
+  toast("已匯出 JSON 備份");
+}
+function importJSON(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      delete data.code;
+      state = { ...blankState(), ...data };
+      scheduleSave(); renderAll();
+      toast("已匯入資料");
+    }catch(err){ alert("檔案格式錯誤，匯入失敗。"); }
+  };
+  reader.readAsText(file);
+  evt.target.value = "";
+}
+function downloadReport(){
+  const reportBody = renderSummary();
+  const html = `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+  <title>生態循環彙整報告 - ${escapeHtml(state.topic)}</title>
+  <style>
+    body{font-family:"Noto Sans TC",sans-serif; background:#f6f2e8; color:#22271f; padding:32px; max-width:820px; margin:0 auto;}
+    h1{font-family:"Noto Serif TC",serif;}
+    .panel{background:#fffdf8; border:1px solid #dcd4bf; border-radius:14px; padding:24px;}
+    .summary-block{border-left:4px solid #ccc; padding:6px 0 6px 14px; margin-bottom:16px;}
+    .summary-block h3{margin:0 0 8px;}
+    .summary-block ul{margin:0; padding-left:18px;}
+    .empty-hint{color:#9a9484; font-style:italic;}
+  </style></head><body>
+  <h1>🔁 生態循環彙整報告</h1>
+  <p>主題代碼：${currentCode||"—"} ・ 產生時間：${new Date().toLocaleString("zh-TW")}</p>
+  ${reportBody}
+  </body></html>`;
+  const blob = new Blob([html], {type:"text/html"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ecocycle-report-${currentCode||"report"}.html`;
+  a.click();
+  toast("已下載彙整報告");
+}
+</script>
+</body>
+</html>
